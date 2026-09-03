@@ -38,6 +38,7 @@ jobs:
           git add CHANGELOG.md Gemfile.lock gemfiles lib
           git commit -m "Version bump"
           git push
+          git push origin HEAD:main
 
       # Release
       - uses: rubygems/release-gem@v1
