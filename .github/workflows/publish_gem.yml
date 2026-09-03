@@ -1,11 +1,8 @@
 name: Publish Gem
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version"
-        required: true
-        type: string
+  push:
+    tags: ["v*"]
+    branches: [release]
 
 jobs:
   test:
