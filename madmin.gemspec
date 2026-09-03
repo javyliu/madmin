@@ -5,11 +5,11 @@ require "madmin/version"
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |spec|
-  spec.name = "madmin"
+  spec.name = "jav_madmin"
   spec.version = Madmin::VERSION
-  spec.authors = ["Chris Oliver", "Andrea Fomera"]
-  spec.email = ["excid3@gmail.com", "afomera@hey.com"]
-  spec.homepage = "https://github.com/excid3/madmin"
+  spec.authors = ["Chris Oliver", "Andrea Fomera","javyliu"]
+  spec.email = ["excid3@gmail.com", "afomera@hey.com", "javy_liu@163.com"]
+  spec.homepage = "https://github.com/javyliu/madmin"
   spec.summary = "A modern admin for Ruby on Rails apps"
   spec.description = "It's an admin, obviously."
   spec.license = "MIT"
