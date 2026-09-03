@@ -36,8 +36,8 @@ jobs:
 
           bundle config set --local deployment 'false'
           bundle config set --local frozen 'false'
-          bundle
-          bundle exec appraisal
+          bundle install  # Add 'install' explicitly
+          bundle exec appraisal install  # Add 'install' explicitly
           git config user.name 'GitHub Actions'
           git config user.email github-actions@github.com
           git add CHANGELOG.md Gemfile.lock gemfiles lib
