@@ -35,6 +35,7 @@ jobs:
           sed -i "s/^### Unreleased$/### Unreleased\n\n### $VERSION/" CHANGELOG.md
 
           bundle config set --local deployment 'false'
+          bundle config set --local frozen 'false'
           bundle
           bundle exec appraisal
           git config user.name 'GitHub Actions'
