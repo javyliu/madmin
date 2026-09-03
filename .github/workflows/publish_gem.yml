@@ -27,7 +27,7 @@ jobs:
 
       - name: Update version and changelog
         env:
-          VERSION: ${{ github.ref_name | removeprefix('v') }}
+          VERSION: ${{ removeprefix(github.ref_name, 'v') }}
         run: |
           sed -i "s/\".*\"/\"$VERSION\"/" lib/madmin/version.rb
 
@@ -50,5 +50,5 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ github.ref_name | removeprefix('v') }}
+          VERSION: ${{ removeprefix(github.ref_name, 'v') }}
         run: gh release create "v$VERSION" --verify-tag --title "v$VERSION" --generate-notes
