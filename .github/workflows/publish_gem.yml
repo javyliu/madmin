@@ -25,7 +25,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
 
-          git co release
+          git checkout release
           sed -i "s/\".*\"/\"$VERSION\"/" lib/madmin/version.rb
 
           # Promote the Unreleased entries to this version and start a fresh Unreleased section
