@@ -24,8 +24,6 @@ jobs:
       - name: Update version and changelog
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-
-          git checkout release
           sed -i "s/\".*\"/\"$VERSION\"/" lib/madmin/version.rb
 
           # Promote the Unreleased entries to this version and start a fresh Unreleased section
@@ -39,7 +37,7 @@ jobs:
           git config user.email github-actions@github.com
           git add CHANGELOG.md Gemfile.lock gemfiles lib
           git commit -m "Version bump"
-          git push origin release
+          git push origin HEAD:release
 
       # Release
       - uses: rubygems/release-gem@v1
