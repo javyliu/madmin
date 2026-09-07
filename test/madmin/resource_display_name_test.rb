@@ -36,5 +36,6 @@ class ResourceDisplayNameTest < ActiveSupport::TestCase
     end
   ensure
     I18n.enforce_available_locales = true
+    I18n.reload!
   end
 end

@@ -46,7 +46,6 @@ class PostsResourceTest < ActionDispatch::IntegrationTest
   end
 
   test "erb pages with friendly_name.pluralize and localize setting" do
-    I18n.reload!
     I18n.enforce_available_locales = false
     I18n.backend.store_translations :"zh-CN", activerecord: {
       models: {
@@ -74,10 +73,10 @@ class PostsResourceTest < ActionDispatch::IntegrationTest
     end
   ensure
     I18n.enforce_available_locales = true
+    I18n.reload!
   end
 
   test "menu with localize setting" do
-    I18n.reload!
     I18n.enforce_available_locales = false
     I18n.backend.store_translations :en, {activerecord: {
       models: {
@@ -113,5 +112,6 @@ class PostsResourceTest < ActionDispatch::IntegrationTest
     end
   ensure
     I18n.enforce_available_locales = true
+    I18n.reload!
   end
 end
