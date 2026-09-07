@@ -7,7 +7,7 @@ require "madmin/version"
 Gem::Specification.new do |spec|
   spec.name = "jav_madmin"
   spec.version = Madmin::VERSION
-  spec.authors = ["Chris Oliver", "Andrea Fomera","javyliu"]
+  spec.authors = ["Chris Oliver", "Andrea Fomera", "javyliu"]
   spec.email = ["excid3@gmail.com", "afomera@hey.com", "javy_liu@163.com"]
   spec.homepage = "https://github.com/javyliu/madmin"
   spec.summary = "A modern admin for Ruby on Rails apps"
