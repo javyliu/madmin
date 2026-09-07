@@ -75,7 +75,7 @@ class ResourceTest < ActiveSupport::TestCase
     assert_equal :post, PostResource.menu_options.dig(:label)
   end
 
-  test "customize menu labal" do
+  test "customize menu label" do
     UserResource.menu label: "Custom label"
     assert_equal "Custom label", UserResource.menu_options.dig(:label)
   ensure
