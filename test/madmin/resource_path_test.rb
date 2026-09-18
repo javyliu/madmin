@@ -26,4 +26,11 @@ class ResourcePathTest < ActiveSupport::TestCase
   test "resource has an index path for non-model resource" do
     assert_equal "/madmin/action_text/rich_texts", ActionText::RichTextResource.index_path
   end
+
+  test "resource index path has locale params" do
+    Madmin.multi_locales = true
+    assert_equal "/madmin/posts?locale=en", PostResource.index_path
+  ensure
+    Madmin.multi_locales = false
+  end
 end

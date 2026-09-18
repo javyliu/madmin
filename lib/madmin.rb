@@ -44,6 +44,7 @@ module Madmin
   mattr_accessor :site_name
   mattr_accessor :stylesheets, default: []
   mattr_accessor :resource_locations, default: []
+  mattr_accessor :multi_locales, default: false, instance_accessor: false
 
   class MissingResource < StandardError
   end

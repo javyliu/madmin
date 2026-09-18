@@ -49,4 +49,15 @@ class Madmin::Test < ActiveSupport::TestCase
   test "resource_for with STI fallback" do
     assert_equal EventResource, Madmin.resource_for(CommentEvent.new)
   end
+
+  test "default multi_locales" do
+    assert_equal false, Madmin.multi_locales
+  end
+
+  test "set multi_locales" do
+    Madmin.multi_locales = true
+    assert_equal true, Madmin.multi_locales
+  ensure
+    Madmin.multi_locales = false
+  end
 end
