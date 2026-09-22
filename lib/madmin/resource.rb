@@ -97,43 +97,20 @@ module Madmin
         @route_namespace = (namespace ? namespace.name.underscore.to_sym : nil)
       end
 
-      # ori_opts = Madmin.multi_locales ? {locale: I18n.locale} : {}
-
-      # [
-      #  [:index_path, ori_opts, false],
-      #  [:new_path, ori_opts.merge(action: :new), false],
-      #  [:show_path, ori_opts, true],
-      #  [:edit_path, ori_opts.merge(action: :edit), true]
-      # ].each do |item|
-      #  if item[2]
-      #    define_method item[0] do |record, options = item[1]|
-      #      url_helpers.polymorphic_path([:madmin, route_namespace, becomes(record)], options)
-      #    end
-      #  else
-      #    define_method item[0] do |options = item[1]|
-      #      url_helpers.polymorphic_path([:madmin, route_namespace, model], options)
-      #    end
-      #  end
-      # end
-
-      def index_path(options = {})
-        ori_opts = Madmin.multi_locales ? {locale: I18n.locale} : {}
-        url_helpers.polymorphic_path([:madmin, route_namespace, model], options.merge(ori_opts))
+      def index_path(options = nil)
+        build_polymorphic_path([:madmin, route_namespace, model], options)
       end
 
-      def new_path(options = {action: :new})
-        ori_opts = Madmin.multi_locales ? {locale: I18n.locale} : {}
-        url_helpers.polymorphic_path([:madmin, route_namespace, model], options.merge(ori_opts))
+      def new_path(options = nil)
+        build_polymorphic_path([:madmin, route_namespace, model], options, action: :new)
       end
 
-      def show_path(record, options = {})
-        ori_opts = Madmin.multi_locales ? {locale: I18n.locale} : {}
-        url_helpers.polymorphic_path([:madmin, route_namespace, becomes(record)], options.merge(ori_opts))
+      def show_path(record, options = nil)
+        build_polymorphic_path([:madmin, route_namespace, becomes(record)], options)
       end
 
-      def edit_path(record, options = {action: :edit})
-        ori_opts = Madmin.multi_locales ? {locale: I18n.locale} : {}
-        url_helpers.polymorphic_path([:madmin, route_namespace, becomes(record)], options.merge(ori_opts))
+      def edit_path(record, options = nil)
+        build_polymorphic_path([:madmin, route_namespace, becomes(record)], options, action: :edit)
       end
 
       def becomes(record)
@@ -310,6 +287,17 @@ module Madmin
         return false if @menu_options == false
         @menu_options ||= {}
         @menu_options.with_defaults(label: model.model_name.i18n_key, url: index_path)
+      end
+
+      private
+
+      def locale_options
+        Madmin.multi_locales ? {locale: I18n.locale} : {}
+      end
+
+      def build_polymorphic_path(path_array, options, extra_opts = {})
+        opts = (options || {}).merge(extra_opts).merge(locale_options)
+        url_helpers.polymorphic_path(path_array, opts)
       end
     end
 
