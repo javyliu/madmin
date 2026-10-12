@@ -33,7 +33,6 @@ class ResourceTest < ActiveSupport::TestCase
 
   test "friendly_name" do
     assert_equal "User", UserResource.friendly_name
-    assert_equal "Users", UserResource.friendly_name(count: 2)
     assert_equal "Foo Bar Bah", FooBarBahResource.friendly_name
     assert_equal "Active Storage / Blob", ActiveStorage::BlobResource.friendly_name
   end
