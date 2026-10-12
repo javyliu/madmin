@@ -9,7 +9,7 @@ module Madmin
     before_action :set_paper_trail_whodunnit, if: -> { respond_to?(:set_paper_trail_whodunnit, true) }
 
     def index
-      @pagy, @records = paginate_collection(scoped_resources)
+      @page, @records = paginate_collection(scoped_resources)
 
       respond_to do |format|
         format.html
@@ -27,8 +27,8 @@ module Madmin
     end
 
     def create
-      @record = resource.model.new(resource_params)
-      if @record.save
+      @record = resource.model.new
+      if save_record(resource_params)
         redirect_to resource.show_path(@record)
       else
         render :new, status: :unprocessable_entity
@@ -39,7 +39,7 @@ module Madmin
     end
 
     def update
-      if @record.update(resource_params)
+      if save_record(resource_params)
         redirect_to resource.show_path(@record)
       else
         render :edit, status: :unprocessable_entity
@@ -47,11 +47,24 @@ module Madmin
     end
 
     def destroy
-      @record.destroy
-      redirect_to resource.index_path
+      if @record.destroy
+        redirect_to resource.index_path, status: :see_other
+      else
+        destroy_failed destroy_errors
+      end
+    rescue ActiveRecord::DeleteRestrictionError, ActiveRecord::InvalidForeignKey
+      destroy_failed t("madmin.flash.destroy_restricted", name: resource.friendly_name)
     end
 
     private
+
+    def destroy_failed(message)
+      redirect_back_or_to resource.index_path, alert: message, status: :see_other
+    end
+
+    def destroy_errors
+      @record.errors.full_messages.to_sentence.presence || t("madmin.flash.destroy_failed", name: resource.friendly_name)
+    end
 
     def set_record
       @record = resource.model_find(params[:id])
@@ -68,15 +81,17 @@ module Madmin
 
     def scoped_resources
       resources = resource.model.send(valid_scope)
-      resources = Madmin::Search.new(resources, resource, search_term).run
+      resources = Madmin::Search.new(resources, resource, search_term, filters).run
 
       return resources if sort_column.blank?
 
       resources.reorder(sort_column => sort_direction)
     end
 
+    # Returns [page, records]. Override for non-ActiveRecord collections and
+    # return an object responding to the Madmin::Page interface.
     def paginate_collection(collection)
-      pagy(collection)
+      paginate(collection, page: params[:page], per_page: Madmin::Page.per_page_for(params[:per_page]))
     end
 
     def valid_scope
@@ -85,30 +100,49 @@ module Madmin
     end
 
     def resource_params
-      params.require(resource.param_key)
-        .permit(*resource.permitted_params)
-        .transform_values { |v| change_polymorphic(v) }
+      cast_fields params.require(resource.param_key).permit(*resource.permitted_params)
     end
 
     def new_resource_params
-      params.fetch(resource.param_key, {}).permit!
-        .permit(*resource.permitted_params)
-        .transform_values { |v| change_polymorphic(v) }
+      cast_fields params.fetch(resource.param_key, {}).permit!.permit(*resource.permitted_params)
     end
 
-    def change_polymorphic(data)
-      return data unless data.is_a?(ActionController::Parameters) && data[:type]
-
-      if data[:type] == "polymorphic"
-        GlobalID::Locator.locate(data[:value])
-      else
-        raise "Unrecognised param data: #{data.inspect}"
+    # Lets each field convert its submitted value, such as parsing JSON
+    def cast_fields(attributes)
+      attributes.to_h.to_h do |name, value|
+        field = field_for(name)
+        [name, field ? field.cast(value) : value]
       end
+    end
+
+    # Assigns the attributes and saves, unless a field doesn't accept its value
+    def save_record(attributes)
+      @record.assign_attributes(attributes)
+
+      rejected = attributes.select { |name, value| field_for(name)&.accepts?(value) == false }.keys
+
+      if rejected.any?
+        @record.validate
+        rejected.each { |name| @record.errors.add(name, :invalid) }
+        false
+      else
+        @record.save
+      end
+    end
+
+    def field_for(name)
+      resource.get_attribute(name.to_sym)&.field
     end
 
     def search_term
       @search_term ||= params[:q].to_s.strip
     end
+
+    # The index filters from `filters[][column]`, `filters[][operator]` and `filters[][value]`
+    def filters
+      @filters ||= Madmin::Filter.from_params(resource, params.slice(:filters).permit(filters: [:column, :operator, :value]).fetch(:filters, []))
+    end
+    helper_method :filters
 
     def enforce_readonly
       redirect_to resource.index_path, alert: t("madmin.flash.readonly", name: resource.friendly_name) if resource.readonly?

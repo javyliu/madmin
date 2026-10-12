@@ -6,7 +6,11 @@ class UserResource < Madmin::Resource
   attribute :last_name
   attribute :birthday
   attribute :ssn
+  attribute :admin, index: true
+  attribute :balance, :currency, index: true
+  attribute :digest_time
   attribute :token, index: false
+  attribute :external_id, index: false if User.columns_hash["external_id"] # PostgreSQL only
   attribute :created_at, form: false
   attribute :updated_at, form: false
   attribute :virtual_attribute, index: false
@@ -21,6 +25,8 @@ class UserResource < Madmin::Resource
 
   # Associations
   attribute :posts, :nested_has_many, skip: %I[attachments]
+  attribute :latest_post, form: false
+  attribute :profile, :nested_has_one, skip: %I[user]
   attribute :comments
   attribute :habtms
 

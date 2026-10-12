@@ -81,10 +81,22 @@ module Madmin
         )
       end
 
-      # Returns singular name
-      # For example: "Forum::Post" -> "Post"
-      def friendly_name(count: 1)
-        model.model_name.human(count: count, default: model_name.titleize.pluralize(count, I18n.locale))
+      # For example: "Forum::Post" -> "Forum / Post"
+      #
+      # Uses the model's translation (`activerecord.models.forum/post`) when there is one
+      def friendly_name
+        translated_name || model_name.split("::").map { |part| part.underscore.humanize }.join(" / ").titlecase
+      end
+
+      # Returns plural name
+      # For example: "Forum::Post" -> "Forum / Posts"
+      def friendly_plural_name
+        singular = translated_name
+        return friendly_name.pluralize unless singular
+
+        # A translation without `one` / `other` forms is the same for every count
+        return translated_name(count: 2) if plural_translation? || !locale_inflections?
+        singular.pluralize(I18n.locale)
       end
 
       # Support for isolated namespaces
@@ -97,20 +109,29 @@ module Madmin
         @route_namespace = (namespace ? namespace.name.underscore.to_sym : nil)
       end
 
-      def index_path(options = nil)
-        build_polymorphic_path([:madmin, route_namespace, model], options)
+      def index_path(options = {})
+        route_path([:madmin, route_namespace, model], options)
       end
 
-      def new_path(options = nil)
-        build_polymorphic_path([:madmin, route_namespace, model], options, action: :new)
+      def new_path
+        route_path([:madmin, route_namespace, model], action: :new)
       end
 
-      def show_path(record, options = nil)
-        build_polymorphic_path([:madmin, route_namespace, becomes(record)], options)
+      def show_path(record)
+        route_path([:madmin, route_namespace, becomes(record)])
       end
 
-      def edit_path(record, options = nil)
-        build_polymorphic_path([:madmin, route_namespace, becomes(record)], options, action: :edit)
+      def edit_path(record)
+        route_path([:madmin, route_namespace, becomes(record)], action: :edit)
+      end
+
+      # Whether a route is drawn for the given action on this resource's controller
+      # For example: PostResource.route?(:destroy)
+      def route?(action)
+        controller = "madmin/#{model.model_name.collection}"
+        Rails.application.routes.routes.any? do |route|
+          route.defaults[:controller] == controller && route.defaults[:action] == action.to_s
+        end
       end
 
       def becomes(record)
@@ -149,6 +170,10 @@ module Madmin
         attributes.values.select { |a| a.field.searchable? }
       end
 
+      def filterable_attributes
+        attributes.values.select { |a| a.field&.filter_type }
+      end
+
       def member_action(collection: false, &block)
         member_actions << MemberAction.new(collection: collection, &block)
       end
@@ -164,6 +189,7 @@ module Madmin
 
       def field_for_type(type)
         {
+          array: Fields::Array,
           binary: Fields::String,
           blob: Fields::Text,
           boolean: Fields::Boolean,
@@ -223,7 +249,8 @@ module Madmin
           has_many: Fields::HasMany,
           has_one: Fields::HasOne,
           rich_text: Fields::RichText,
-          nested_has_many: Fields::NestedHasMany
+          nested_has_many: Fields::NestedHasMany,
+          nested_has_one: Fields::NestedHasOne
         }[type]
       end
 
@@ -234,6 +261,8 @@ module Madmin
           column_type = model.attribute_types[name_string]
           if column_type.is_a? ::ActiveRecord::Enum::EnumType
             :enum
+          elsif model.columns_hash[name_string].try(:array?)
+            :array
           else
             column_type.type || :string
           end
@@ -272,6 +301,26 @@ module Madmin
         @url_helpers ||= Rails.application.routes.url_helpers
       end
 
+      # Raises MissingRoute with instructions instead of a NoMethodError for
+      # the undefined route helper when the resource's routes aren't drawn
+      def route_path(components, options = {})
+        url_helpers.polymorphic_path(components, options)
+      rescue NoMethodError => error
+        raise unless error.name.to_s.end_with?("_path")
+
+        *namespaces, resources = model.model_name.collection.split("/")
+        routes = namespaces.reverse.inject("resources :#{resources}") do |body, namespace|
+          "namespace :#{namespace} do\n#{body.indent(2)}\nend"
+        end
+
+        raise MissingRoute, [
+          "`#{error.name}` is not defined, so #{name} has no route for this page.",
+          "Add the route inside `namespace :madmin` in your routes:",
+          routes.indent(4),
+          "To hide the resource from the menu instead, add `menu false` to #{name}."
+        ].join("\n\n")
+      end
+
       def model_store_accessors
         return [] unless model.respond_to?(:stored_attributes)
 
@@ -286,18 +335,28 @@ module Madmin
       def menu_options
         return false if @menu_options == false
         @menu_options ||= {}
-        @menu_options.with_defaults(label: model.model_name.i18n_key, url: index_path)
+        # The default label follows the locale, so the menu tracks the item by resource instead
+        @menu_options.with_defaults(key: @menu_options[:label] || name, label: friendly_plural_name, url: index_path)
       end
 
       private
 
-      def locale_options
-        Madmin.multi_locales ? {locale: I18n.locale} : {}
+      def translated_name(count: 1)
+        model.model_name.human(count: count, default: "").presence
       end
 
-      def build_polymorphic_path(path_array, options, extra_opts = {})
-        opts = (options || {}).merge(extra_opts).merge(locale_options)
-        url_helpers.polymorphic_path(path_array, opts)
+      # Whether the model's translation spells out its own `one` / `other` forms
+      def plural_translation?
+        model.lookup_ancestors.each do |klass|
+          translation = I18n.t(klass.model_name.i18n_key, scope: [klass.i18n_scope, :models], default: "")
+          return translation.is_a?(Hash) if translation.present?
+        end
+        false
+      end
+
+      # Locales without inflection rules of their own (most non-English ones) are left unpluralized
+      def locale_inflections?
+        ActiveSupport::Inflector::Inflections.instance(I18n.locale).plurals.any?
       end
     end
 

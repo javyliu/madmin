@@ -1,6 +1,7 @@
 require "test_helper"
 
 class FooBarBah < ApplicationRecord; end
+
 class FooBarBahResource < Madmin::Resource; end
 
 class CollectionActionParentResource < Madmin::Resource
@@ -34,51 +35,75 @@ class ResourceTest < ActiveSupport::TestCase
     assert_equal "User", UserResource.friendly_name
     assert_equal "Users", UserResource.friendly_name(count: 2)
     assert_equal "Foo Bar Bah", FooBarBahResource.friendly_name
-    assert_equal "Foo Bar Bahs", FooBarBahResource.friendly_name(count: 2)
+    assert_equal "Active Storage / Blob", ActiveStorage::BlobResource.friendly_name
   end
 
-  test "friendly_name with localize setting" do
-    I18n.enforce_available_locales = false
+  test "friendly_plural_name" do
+    assert_equal "Users", UserResource.friendly_plural_name
+    assert_equal "Foo Bar Bahs", FooBarBahResource.friendly_plural_name
+    assert_equal "Active Storage / Blobs", ActiveStorage::BlobResource.friendly_plural_name
+  end
 
-    I18n.backend.store_translations :en, activerecord: {
-      models: {
-        post: {
-          one: "Post",
-          other: "Posts"
-        }
-      }
-    }
-    I18n.backend.store_translations :"zh-CN", activerecord: {
-      models: {
-        post: "文章",
-        "active_storage/attachment": "附件"
-      }
-    }
+  test "friendly names use the model's translation" do
+    with_translations(
+      en: {activerecord: {models: {post: {one: "Article", other: "Articles"}, user: "Person", comment: {one: "Staff", other: "Staff"}}}},
+      "zh-CN": {activerecord: {models: {post: "文章", "active_storage/blob": "文件"}}}
+    ) do
+      assert_equal "Article", PostResource.friendly_name
+      assert_equal "Articles", PostResource.friendly_plural_name
 
-    I18n.with_locale(:en) do
-      assert_equal "Post", PostResource.friendly_name
-      assert_equal "Posts", PostResource.friendly_name(count: 2)
+      # A translation with no plural forms is pluralized by the locale's inflections
+      assert_equal "Person", UserResource.friendly_name
+      assert_equal "People", UserResource.friendly_plural_name
+
+      # Explicit plural forms are used as written, even when they match the singular
+      assert_equal "Staff", CommentResource.friendly_plural_name
+
+      I18n.with_locale(:"zh-CN") do
+        assert_equal "文章", PostResource.friendly_name
+        assert_equal "文章", PostResource.friendly_plural_name
+        assert_equal "文件", ActiveStorage::BlobResource.friendly_name
+
+        # Untranslated models keep their default names
+        assert_equal "User", UserResource.friendly_name
+        assert_equal "Users", UserResource.friendly_plural_name
+      end
     end
-    I18n.with_locale(:"zh-CN") do
-      assert_equal "文章", PostResource.friendly_name
-      assert_equal "文章", PostResource.friendly_name(count: 2)
-      assert_equal "User", UserResource.friendly_name
-      assert_equal "User", UserResource.friendly_name(count: 2)
-      assert_equal "附件", ActiveStorage::AttachmentResource.friendly_name
+  end
+
+  test "menu label is a string that follows the locale" do
+    with_translations("zh-CN": {activerecord: {models: {post: "文章"}}}) do
+      assert_equal "Posts", PostResource.menu_options[:label]
+      assert_equal "Active Storage / Blobs", ActiveStorage::BlobResource.menu_options[:label]
+
+      I18n.with_locale(:"zh-CN") do
+        assert_equal "文章", PostResource.menu_options[:label]
+      end
+    end
+  end
+
+  test "menu lists a resource once after the locale changes" do
+    with_translations("zh-CN": {activerecord: {models: {post: "文章"}}}) do
+      assert_includes menu_labels, "Posts"
+
+      I18n.with_locale(:"zh-CN") do
+        labels = menu_labels
+        assert_includes labels, "文章"
+        assert_not_includes labels, "Posts"
+      end
+
+      labels = menu_labels
+      assert_includes labels, "Posts"
+      assert_not_includes labels, "文章"
     end
   ensure
-    I18n.enforce_available_locales = true
-    I18n.reload!
+    Madmin.menu.reset
   end
 
-  test "default menu label" do
-    assert_equal :"active_storage/blob", ActiveStorage::BlobResource.menu_options.dig(:label)
-    assert_equal :post, PostResource.menu_options.dig(:label)
-  end
-
-  test "customize menu label" do
+  test "custom menu label is kept" do
     UserResource.menu label: "Custom label"
-    assert_equal "Custom label", UserResource.menu_options.dig(:label)
+    assert_equal "Custom label", UserResource.menu_options[:label]
+    assert_includes menu_labels, "Custom label"
   ensure
     UserResource.menu nil
     Madmin.menu.reset
@@ -156,5 +181,22 @@ class ResourceTest < ActiveSupport::TestCase
     end
 
     assert_equal "RECENT", resource.scope_label(:recent)
+  end
+
+  private
+
+  def menu_labels
+    labels = []
+    Madmin.menu.render { |item| labels.push(item.label, *item.items.map(&:label)) }
+    labels
+  end
+
+  def with_translations(translations)
+    enforce, I18n.enforce_available_locales = I18n.enforce_available_locales, false
+    translations.each { |locale, data| I18n.backend.store_translations(locale, data) }
+    yield
+  ensure
+    I18n.enforce_available_locales = enforce
+    I18n.reload!
   end
 end

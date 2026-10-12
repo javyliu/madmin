@@ -28,6 +28,8 @@ fr:
         other: Il y a eu %{count} erreurs dans votre soumission
     flash:
       readonly: "%{name} est en lecture seule"
+      destroy_failed: "%{name} n'a pas pu être supprimé"
+      destroy_restricted: "%{name} n'a pas pu être supprimé car d'autres enregistrements en dépendent"
     confirmations:
       delete: Êtes-vous sûr ?
       remove_with_changes: Êtes-vous sûr ? Vous perdrez toutes les autres modifications.
@@ -40,3 +42,48 @@ fr:
     missing_resource:
       message: "%{resource} est introuvable."
       create_hint: "Pour le créer, exécutez :"
+    pagination:
+      label: Pagination
+      previous: Précédent
+      next: Suivant
+      info: "Affichage de %{from} à %{to} sur %{count}"
+      empty: Aucun enregistrement trouvé
+      per_page: Par page
+    filters:
+      button: "Filtres"
+      heading: "Afficher les enregistrements où"
+      add: "+ Ajouter un filtre"
+      apply: "Appliquer"
+      clear_all: "Effacer les filtres"
+      remove: "Retirer le filtre"
+      column: "Colonne"
+      operator: "Condition"
+      value: "Valeur"
+      operators:
+        string:
+          contains: "contient"
+          eq: "est"
+          starts_with: "commence par"
+          blank: "est vide"
+          present: "n'est pas vide"
+        number:
+          eq: "="
+          gt: ">"
+          gte: "≥"
+          lt: "<"
+          lte: "≤"
+          blank: "est vide"
+        date:
+          eq: "le"
+          gte: "le ou après"
+          lte: "le ou avant"
+          blank: "est vide"
+        datetime:
+          gte: "après"
+          lte: "avant"
+          blank: "est vide"
+        boolean:
+          "true": "est vrai"
+          "false": "est faux"
+        array:
+          includes: "contient"

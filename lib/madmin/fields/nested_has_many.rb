@@ -7,7 +7,7 @@ module Madmin
       end
 
       def resource
-        "#{to_model.name}Resource".constantize
+        Madmin.resource_by_name(to_model)
       end
 
       def to_param
@@ -23,7 +23,7 @@ module Madmin
       end
 
       def to_model
-        attribute_name.to_s.singularize.classify.constantize
+        model.reflect_on_association(attribute_name).klass
       end
 
       def paginateable?

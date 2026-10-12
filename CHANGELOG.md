@@ -1,5 +1,52 @@
 ### Unreleased
 
+### 3.3.0
+
+* Draw form field borders with `border` instead of an inset `box-shadow`, so fields stay outlined in forced colors (high contrast) mode and match Lexxy and Trix. Field sizes are unchanged. Fields that an app's `field_error_proc` marks with `.error` (inputs, selects, textareas and Lexxy/Trix editors) now get a red border instead of red text, which also tinted Lexxy's toolbar. `.error` messages are still red
+* Pass `resource` and `name` to the `madmin.confirmations.delete` translation and `name` (the filename) to `madmin.confirmations.remove_with_changes`, so apps can say what is being deleted, e.g. `delete: "Delete %{name}?"`. The default messages are unchanged #392
+
+### 3.2.0
+
+* Add page size links to pagination. The index accepts a `per_page` param and has many fields accept `<attribute>_per_page`, capped at 200, or at `Madmin.per_page` when that is higher #390
+
+### 3.1.2
+
+* Fix filters on PostgreSQL UUID columns. "contains" and "starts with" no longer raise, and "is not empty" no longer matches nothing #386
+
+### 3.1.1
+
+* Show an alert when a record can't be deleted instead of redirecting as if it had been. A destroy halted by a callback shows the model's errors, or "could not be deleted" when there are none, and `dependent: :restrict_with_exception` and foreign key violations show an alert instead of raising. Adds the `madmin.flash.destroy_failed` and `madmin.flash.destroy_restricted` translations. Destroy redirects now respond with 303 See Other #385
+
+### 3.1.0
+
+* Add `direct_upload: true` for attachment and file fields to upload straight to the Active Storage service. Madmin's JavaScript now starts Active Storage; fields without the option keep uploading through the form
+* Remove the unused `tailwindcss-stimulus-components` pin and its `dropdown` controller, which no Madmin view has used since the move to plain CSS. Custom views that use `data-controller="dropdown"` should pin and register it in their app
+
+### 3.0.0
+
+* Add an array field for PostgreSQL array columns. Values are shown and edited as comma separated text, and index filters offer "includes". Array columns were treated as strings before, so filters ran `ILIKE` against them and failed
+* Add filters to index pages. A Filters button opens a form for conditions on string, text, number, date, datetime and boolean columns, like "Admin is true" or "Created at after Aug 15". Active filters show as removable chips and are kept in the URL, sorting, scopes, search and pagination. Datetime values are parsed in `Time.zone`. Use `filter: false` to leave out an attribute, and `Field.filter_type` for custom fields. Customized `index.html.erb` views can add `<%= render "filters" %>` and `<%= render "active_filters" %>` #227
+* Index links keep the current search, scope, sort and filters through a new `index_path_with` helper. Clearing the search no longer drops the scope
+* Add a `:nested_has_one` field for editing a has one association inside the parent's form. It shows an "Add" link until the record exists, so saving the parent doesn't create an empty one #207
+* Fix `:nested_has_many` looking up the associated class and resource from the attribute name, which broke for associations with `class_name` or in a namespace. It now uses the association's class
+* Replace Tom Select with a small Stimulus combobox, removing the `tom-select` importmap pin and its stylesheet. Belongs to and has many fields keep the same `data-controller="select"` and `data-select-url-value` attributes, loading `[{id, name}]` JSON from the URL when focused and as you type. Search terms are now URL encoded. Enum, select and polymorphic fields use native selects. Custom views that used Tom Select options or its CSS classes (`.ts-control`, `.ts-dropdown`) need updating; apps that use Tom Select directly should pin it themselves
+* Add dark mode, following the system's light or dark setting. Colors are CSS variables on `:root` defined with `light-dark()`; set `color-scheme: light` on `:root` to opt out. Adds `--link-color` for links, while `--primary-color` stays the button background. Trix and Lexxy editors get dark colors too. Custom styles with hard-coded light colors may need a dark variant
+* Remove the unused flatpickr stylesheet. Madmin replaced flatpickr with native date inputs in 2.0.1; apps that still use flatpickr in custom fields should include its stylesheet themselves
+* **Breaking:** Replace Pagy with built-in pagination (`Madmin::Pagination` and `Madmin::Page`). The `pagy` gem is no longer a dependency.
+  * Customized `index.html.erb` views should replace the `pagy_nav` / `@pagy.series_nav` block with `<%= render "pagination", page: @page %>`
+  * `paginate_collection` overrides must return `[page, records]` where `page` responds to the `Madmin::Page` interface (`page`, `last`, `count`, `from`, `to`, `prev`, `next`, `series`, `param`)
+  * Set the page size with `Madmin.per_page = 20` instead of Pagy's options
+  * The `.pagy` CSS class is now `.pagination .pages`
+  * Index queries append the primary key to the ordering so rows with equal sort values stay stable across pages
+* Fix belongs_to, has_one and polymorphic index cells raising `Madmin::MissingResource` for a target with no resource. They now go through `associated_resource_for` and render the same missing-resource notice the show partials already do, so one unresolvable row no longer 500s the whole index #367
+* Raise `Madmin::MissingRoute` with the route to add when a resource's routes aren't drawn, instead of a `NoMethodError` for the undefined path helper
+* Association fields render the record's name without a link when the associated resource has no show route, and belongs_to / has_many selects skip remote search when it has no index route
+* Resource names in the menu, headings and buttons use the model's `activerecord.models` translation when it has one. Adds `Resource.friendly_plural_name`; customized views can replace `resource.friendly_name.pluralize` with it to get translated plurals
+* Fix JSON fields saving the submitted text as a string instead of parsing it, and showing a Ruby hash instead of JSON on the form and show page. Invalid JSON re-renders the form with a validation error and a blank field saves `nil`. Adds `Field#cast` for fields that convert their submitted value and `Field#accepts?` to reject it with a validation error #301
+* Fix `Madmin.resource_by_name` raising `NameError` instead of `Madmin::MissingResource`
+* Fix attachment fields raising on show and edit pages when the `ActiveStorage::AttachmentResource` or its routes have been removed. The remove link is now only rendered when the attachment can be deleted through Madmin. Adds `Resource.route?(action)`
+* `Madmin.resource_for` now falls back to the resource that declares the object's class with `model`, so a resource named differently from its model (`ArticleResource` for `Blog::Post`) resolves in association cells and form selects without a name-matching alias subclass. `Madmin.resource_by_name` has the same fallback, and both also match a subclass of the declared model. Name-derived and STI lookups still win; two differently-named resources declaring the same model raise `MissingResource` with both names rather than guessing
+
 ### 2.6.7
 
 ### 2.6.6

@@ -1,12 +1,11 @@
 PATH
   remote: .
   specs:
-    jav_madmin (2.6.7)
-      importmap-rails
-      pagy (>= 3.5)
-      rails (>= 7.0.0)
-      stimulus-rails
-      turbo-rails
+    jav_madmin (3.3.0)
+    importmap-rails
+    rails (>= 7.0.0)
+    stimulus-rails
+    turbo-rails
 
 GEM
   remote: https://rubygems.org/
@@ -153,10 +152,6 @@ GEM
     nio4r (2.7.5)
     nokogiri (1.19.4-x86_64-linux-gnu)
       racc (~> 1.4)
-    pagy (43.6.1)
-      json
-      uri
-      yaml
     parallel (2.1.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
@@ -283,7 +278,6 @@ GEM
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
-    yaml (0.4.0)
     zeitwerk (2.8.3)
 
 PLATFORMS

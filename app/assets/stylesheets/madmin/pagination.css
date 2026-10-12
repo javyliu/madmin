@@ -1,8 +1,11 @@
 .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   padding: 0.5rem;
 }
 
-.pagy {
+.pagination .pages {
   display: inline-flex;
   isolation: isolate;
   border-radius: 0.375rem;
@@ -18,21 +21,21 @@
     align-items: center;
     box-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
     --tw-ring-inset: inset;
-    --tw-ring-color: #D1D5DB;
+    --tw-ring-color: var(--input-border-color);
     font-size: 0.875rem;
     line-height: 1.25rem;
-    color: #111827;
-    background-color: #ffffff;
+    color: var(--text-color);
+    background-color: var(--surface-color);
     border-radius: 0.25rem;
     text-decoration: none;
   }
 
   a:hover {
-    background-color: #F3F4F6;
+    background-color: var(--hover-color);
   }
 
-  a:not([href]) {
-    color: #D1D5DB;
+  a[aria-disabled="true"] {
+    color: var(--input-border-color);
     cursor: default;
   }
 
@@ -40,21 +43,21 @@
     color: #ffffff;
     background-color: var(--primary-color);
   }
+}
 
-  label {
-    display: inline-block;
-    padding-top: 0.125rem;
-    padding-bottom: 0.125rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    border-radius: 0.5rem;
-    white-space: nowrap;
-    background-color: #E5E7EB;
-  }
+.pagination-info {
+  margin-left: 0.5rem;
+}
 
-  label input {
-    border-radius: 0.375rem;
-    border-style: none;
-    background-color: #F3F4F6;
+.per-page {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+  font-size: 0.875rem;
+
+  a[aria-current="true"] {
+    color: var(--text-color);
+    font-weight: 600;
   }
 }

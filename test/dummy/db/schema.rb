@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_08_18_152409) do
+ActiveRecord::Schema.define(version: 2026_10_01_090000) do
   create_table "action_mailbox_inbound_emails", force: :cascade do |t|
     t.bigint "status", default: 0, null: false
     t.string "message_id", null: false
@@ -105,6 +105,15 @@ ActiveRecord::Schema.define(version: 2025_08_18_152409) do
     t.index ["user_id"], name: "index_user_connected_accounts_on_user_id"
   end
 
+  create_table "user_profiles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "bio"
+    t.string "website"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_user_profiles_on_user_id"
+  end
+
   create_table "user_habtms", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "habtm_id"
@@ -123,6 +132,9 @@ ActiveRecord::Schema.define(version: 2025_08_18_152409) do
     t.datetime "updated_at", precision: 6, null: false
     t.json "settings"
     t.text "preferences"
+    t.boolean "admin", default: false, null: false
+    t.decimal "balance", precision: 10, scale: 2
+    t.time "digest_time"
   end
 
   create_table "versions", force: :cascade do |t|
@@ -140,4 +152,15 @@ ActiveRecord::Schema.define(version: 2025_08_18_152409) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "comments", "users"
   add_foreign_key "user_connected_accounts", "users"
+  add_foreign_key "user_profiles", "users"
+
+  # Array columns are PostgreSQL only
+  if connection.adapter_name == "PostgreSQL"
+    add_column "posts", "tags", :string, array: true, default: []
+  end
+
+  # UUID columns are PostgreSQL only
+  if connection.adapter_name == "PostgreSQL"
+    add_column "users", "external_id", :uuid
+  end
 end

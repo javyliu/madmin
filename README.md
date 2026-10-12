@@ -7,11 +7,14 @@
 Why another Ruby on Rails admin? We wanted an admin that was:
 
 - Familiar and customizable like Rails scaffolds (less DSL)
-- Supports all the Rails features out of the box (ActionText, ActionMailbox, has_secure_password, etc)
-- Stimulus / Turbolinks / Hotwire ready
-- Works with Import maps and Sprockets
+- Supports Rails features out of the box (Action Text, Active Storage, Action Mailbox, has_secure_password, etc)
+- Built with Hotwire: Turbo, Stimulus and import maps, with no Node or build step
+- Search, filters and scopes on index pages, and dark mode
+- Works with Propshaft and Sprockets
 
-![Madmin Screenshot](docs/images/screenshot.png)
+![Madmin index page with filters](docs/images/index.png)
+
+![Madmin edit form in dark mode, searching for a user](docs/images/edit-dark.png)
 
 ## Installation
 
@@ -92,6 +95,35 @@ en:
       post:
         published: Live
 ```
+
+### Filters
+
+Index pages have a Filters button for narrowing records by their columns, like "Admin is true" or "Created at after Aug 15". Filters combine with search, scopes and sorting, and they're kept in the URL so filtered lists can be bookmarked and shared.
+
+String, text, number, date, datetime and boolean columns can be filtered. Encrypted columns and attributes that aren't database columns are left out. Turn filtering off for an attribute with `filter: false`:
+
+```ruby
+class UserResource < Madmin::Resource
+  attribute :api_token, filter: false
+end
+```
+
+Custom fields can offer a filter by returning `:string`, `:number`, `:date`, `:datetime` or `:boolean` from `self.filter_type`.
+
+### Resource Names
+
+Resource names in the menu, headings and buttons come from the model's translation when it has one, so they follow Rails' own `activerecord.models` keys:
+
+```yaml
+en:
+  activerecord:
+    models:
+      post:
+        one: Article
+        other: Articles
+```
+
+Models without a translation keep their default names, like `Posts` and `Active Storage / Blobs`.
 
 For labels that need logic (e.g. looking up a record name), override `scope_label`:
 
@@ -177,6 +209,38 @@ class BookResource < Madmin::Resource
   attribute :genre, :select, collection: ["Fiction", "Mystery", "Thriller"]
 end
 ```
+
+### Nested Forms
+
+Use `:nested_has_many` or `:nested_has_one` to edit associated records inside the parent's form. The model needs `accepts_nested_attributes_for`, with `allow_destroy: true` for the Remove link to work, and the associated model needs a resource. Use `skip` to leave out attributes of the associated resource:
+
+```ruby
+class User < ApplicationRecord
+  has_many :posts
+  has_one :profile
+  accepts_nested_attributes_for :posts, :profile, allow_destroy: true
+end
+
+class UserResource < Madmin::Resource
+  attribute :posts, :nested_has_many, skip: %I[user]
+  attribute :profile, :nested_has_one, skip: %I[user]
+end
+```
+
+A nested has one shows its fields when the record exists, or an "Add" link when it doesn't, so saving the parent doesn't create an empty record.
+
+### Direct Uploads
+
+File fields upload through the form by default. Add `direct_upload: true` to upload straight from the browser to your Active Storage service instead, which keeps large files off your app servers and avoids request timeouts:
+
+```ruby
+class PostResource < Madmin::Resource
+  attribute :image, direct_upload: true
+  attribute :attachments, direct_upload: true
+end
+```
+
+Cloud services like S3 need CORS configured to accept uploads from the browser. See the [Active Storage guide](https://guides.rubyonrails.org/active_storage_overview.html#cross-origin-resource-sharing-cors-configuration).
 
 ## Custom Fields
 
@@ -280,6 +344,27 @@ Hooks registered after a class has already loaded run immediately, so ordering i
 
 You can use a couple of strategies to authenticate users who are trying to
 access your madmin panel: [Authentication Docs](docs/authentication.md)
+
+## Dark Mode
+
+Madmin follows the system's light or dark setting. To always use one, add a stylesheet with `Madmin.stylesheets << "madmin_overrides"` (see [Assets](docs/assets.md)) and set `color-scheme`:
+
+```css
+:root {
+  color-scheme: light;
+}
+```
+
+Madmin's colors are CSS variables on `:root`, defined with `light-dark()` so each has a light and a dark value. Custom fields and views can use them to match both modes, and you can override them to change the theme:
+
+```css
+:root {
+  --primary-color: rgb(79 70 229); /* Button backgrounds */
+  --link-color: light-dark(rgb(79 70 229), rgb(129 140 248));
+}
+```
+
+The variables are `--primary-color`, `--link-color`, `--text-color`, `--light-text-color`, `--surface-color` (page and input backgrounds), `--background-color` (table headers), `--hover-color`, `--border-color`, `--input-border-color` and `--danger-color`.
 
 ## Assets
 You can customize the JavaScript and CSS assets used by Madmin for your application. To learn how
