@@ -1,6 +1,8 @@
 ### Unreleased
 
 ### 3.3.1
+=======
+* Add `Resource.delete_confirmation(record)` to customize the delete confirmation per resource. The default looks up `madmin.resources.<model>.confirmations.delete` (e.g. `madmin.resources.rsvp.confirmations.delete`) before `madmin.confirmations.delete`, with the same `resource` and `name` values. Override the method for wording that needs the record, like "Delete the RSVP for Jane Smith?", or return nil to skip the confirmation #392
 
 ### 3.3.0
 
