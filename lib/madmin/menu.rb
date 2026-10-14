@@ -45,7 +45,7 @@ module Madmin
       def items
         @children.values.sort do |a, b|
           result = a.position <=> b.position
-          result = a.human_label <=> b.human_label if result == 0 # sort alphabetically for the same position
+          result = a.label <=> b.label if result == 0 # sort alphabetically for the same position
           result
         end
       end
@@ -67,13 +67,6 @@ module Madmin
         @children = {}
       end
 
-      def human_label
-        @human_label ||= if label.is_a?(Symbol)
-          I18n.t("activerecord.models.#{label}", count: 2, default: [:"madmin.navigation.#{label}", label.to_s.pluralize(I18n.locale).titleize])
-        else
-          label
-        end
-      end
     end
   end
 end
